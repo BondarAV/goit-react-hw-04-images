@@ -1,4 +1,4 @@
-import { Component } from 'react';
+import { useState, useEffect } from 'react';
 
 import { getImageList } from 'api';
 
@@ -10,40 +10,36 @@ import { Modal } from './Modal';
 
 import { perPage } from 'api';
 
-export class App extends Component {
-  state = {
-    images: [],
-    query: '',
-    page: 1,
-    loading: false,
-    targetImg: '',
-    isModalOpen: false,
+export const App = () => {
+  const [images, setImages] = useState([]);
+  const [query, setQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [targetImg, setTargetImg] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (query.trim() === '') return;
+
+    fetchImages(query, page);
+  }, [query, page]);
+
+  const loadMore = () => {
+    setPage(prev => prev + 1);
   };
 
-  componentDidUpdate(_, prevState) {
-    const { query, page } = this.state;
+  const handleQuery = newQuery => {
+    if (query === newQuery) return;
 
-    if (prevState.query !== query || prevState.page !== page) {
-      this.fetchImages(query, page);
-    }
-  }
-
-  loadMore = () => {
-    this.setState(prevState => ({ page: prevState.page + 1 }));
+    setImages([]);
+    setQuery(newQuery);
+    setPage(1);
   };
 
-  handleQuery = query => {
-    this.setState(prevState => {
-      if (prevState.query !== query) {
-        return { images: [], query: query, page: 1 };
-      }
-    });
-  };
-
-  sortData = (data, page) => {
-    this.setState(prevState => ({
-      images: [
-        ...prevState.images,
+  const sortData = data => {
+    setImages(
+      prev => [
+        ...prev,
         ...data.map(element => {
           return {
             id: element.id,
@@ -52,11 +48,12 @@ export class App extends Component {
           };
         }),
       ],
-    }));
+    );
   };
 
-  fetchImages = (query, page) => {
-    this.setState({ loading: true });
+  const fetchImages = (query, page) => {
+
+    setLoading(true);
 
     getImageList(query, page)
       .then(response => {
@@ -65,52 +62,49 @@ export class App extends Component {
             'Sorry, there are no images matching your search query. Please try again.'
           );
         } else {
-          this.sortData(response.data.hits, page);
+          sortData(response.data.hits, page);
         }
       })
       .catch(error => {
         alert(`Action failed with error: ${error}`);
       });
 
-    this.setState({ loading: false });
+    setLoading(false);
   };
 
-  getTargetImgID = largeImage => {
-    this.setState({
-      targetImg: largeImage,
-      isModalOpen: true,
-    });
+  const getTargetImgID = largeImage => {
+    setTargetImg(largeImage);
+    setIsModalOpen(true);
   };
 
-  closeModal = () => {
-    this.setState({ isModalOpen: false });
+  const closeModal = () => {
+    setIsModalOpen(false);
   };
 
-  render() {
-    return (
-      <div className="App">
-        <Searchbar handleQuery={this.handleQuery} />
 
-        {this.state.loading && <Loader />}
+  return (
+    <div className="App">
+      <Searchbar handleQuery={handleQuery} />
 
-        <ImageGallery
-          data={this.state.images}
-          getTargetImgID={this.getTargetImgID}
-        />
+      {loading && <Loader />}
 
-        {this.state.images.length >= perPage &&
-          !this.state.loading &&
-          this.state.images.length >= this.state.page * perPage && (
-            <Button loadMore={this.loadMore} />
-          )}
+      <ImageGallery
+        data={images}
+        getTargetImgID={getTargetImgID}
+      />
 
-        {this.state.isModalOpen && (
-          <Modal
-            targetImg={this.state.targetImg}
-            closeModal={this.closeModal}
-          />
+      {images.length >= perPage &&
+        !loading &&
+        images.length >= page * perPage && (
+          <Button loadMore={loadMore} />
         )}
-      </div>
-    );
-  }
+
+      {isModalOpen && (
+        <Modal
+          targetImg={targetImg}
+          closeModal={closeModal}
+        />
+      )}
+    </div>
+  );
 }
