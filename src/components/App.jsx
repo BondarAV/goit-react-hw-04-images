@@ -21,6 +21,36 @@ export const App = () => {
   useEffect(() => {
     if (query.trim() === '') return;
 
+    const fetchImages = (query, page) => {
+      setLoading(true);
+
+      getImageList(query, page)
+        .then(response => {
+          if (response.data.hits.length === 0) {
+            alert(
+              'Sorry, there are no images matching your search query. Please try again.'
+            );
+            return;
+          }
+
+          setImages(prev => [
+            ...prev,
+            ...response.data.hits.map(element => {
+              return {
+                id: element.id,
+                largeImageURL: element.largeImageURL,
+                webformatURL: element.webformatURL,
+              };
+            }),
+          ]);
+        })
+        .catch(error => {
+          alert(`Action failed with error: ${error}`);
+        });
+
+      setLoading(false);
+    };
+
     fetchImages(query, page);
   }, [query, page]);
 
@@ -36,42 +66,6 @@ export const App = () => {
     setPage(1);
   };
 
-  const sortData = data => {
-    setImages(
-      prev => [
-        ...prev,
-        ...data.map(element => {
-          return {
-            id: element.id,
-            largeImageURL: element.largeImageURL,
-            webformatURL: element.webformatURL,
-          };
-        }),
-      ],
-    );
-  };
-
-  const fetchImages = (query, page) => {
-
-    setLoading(true);
-
-    getImageList(query, page)
-      .then(response => {
-        if (response.data.hits.length === 0) {
-          alert(
-            'Sorry, there are no images matching your search query. Please try again.'
-          );
-        } else {
-          sortData(response.data.hits, page);
-        }
-      })
-      .catch(error => {
-        alert(`Action failed with error: ${error}`);
-      });
-
-    setLoading(false);
-  };
-
   const getTargetImgID = largeImage => {
     setTargetImg(largeImage);
     setIsModalOpen(true);
@@ -81,30 +75,19 @@ export const App = () => {
     setIsModalOpen(false);
   };
 
-
   return (
     <div className="App">
       <Searchbar handleQuery={handleQuery} />
 
       {loading && <Loader />}
 
-      <ImageGallery
-        data={images}
-        getTargetImgID={getTargetImgID}
-      />
+      <ImageGallery data={images} getTargetImgID={getTargetImgID} />
 
       {images.length >= perPage &&
         !loading &&
-        images.length >= page * perPage && (
-          <Button loadMore={loadMore} />
-        )}
+        images.length >= page * perPage && <Button loadMore={loadMore} />}
 
-      {isModalOpen && (
-        <Modal
-          targetImg={targetImg}
-          closeModal={closeModal}
-        />
-      )}
+      {isModalOpen && <Modal targetImg={targetImg} closeModal={closeModal} />}
     </div>
   );
-}
+};

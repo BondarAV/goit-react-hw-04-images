@@ -1,22 +1,31 @@
 import { useEffect } from 'react';
 
-export const Modal = ({targetImg, closeModal}) => {
-
+export const Modal = ({ targetImg, closeModal }) => {
   useEffect(() => {
+    const handleKeyDown = event => {
+      if (event.code === 'Escape') {
+        closeModal();
+      }
+    };
+
     window.addEventListener('keydown', handleKeyDown);
-  }, []);
 
-  useEffect(() => {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
-    }
-  }, []);
+    };
+  }, [closeModal]);
 
-  const handleKeyDown = event => {
-    if (event.code === 'Escape') {
-      closeModal();
-    }
-  };
+  // useEffect(() => {
+  //   return () => {
+  //     window.removeEventListener('keydown', handleKeyDown);
+  //   }
+  // }, []);
+
+  // const handleKeyDown = event => {
+  //   if (event.code === 'Escape') {
+  //     closeModal();
+  //   }
+  // };
 
   const hadleOverlayClick = event => {
     if (event.target === event.currentTarget) {
@@ -31,4 +40,4 @@ export const Modal = ({targetImg, closeModal}) => {
       </div>
     </div>
   );
-}
+};
